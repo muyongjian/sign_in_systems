@@ -1,0 +1,5 @@
+.lock-scroll {
+  overflow: hidden;
+  position: fixed; /* 解决移动端橡皮筋效果 */
+  width: 100%;
+}

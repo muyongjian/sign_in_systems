@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Class Sign-In System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-6">
+    <h1 class="text-2xl font-bold text-center text-indigo-600">Class Sign-In System</h1>
+
+    <!-- Input -->
+    <div class="flex flex-col space-y-4">
+      <input id="studentName" placeholder="Enter Name" class="p-3 border rounded-xl" />
+      <input type="number" id="hours" placeholder="Enter hours" class="p-3 border rounded-xl" />
+      <select id="role" placeholder="Role" class="p-3 border rounded-xl">
+	<option disabled selected value> -- select Role -- </option>
+        <option value="Student">Student</option>
+        <option value="Teacher">Teacher</option>
+      </select>
+
+      <!-- Signature pad -->
+      <canvas id="signaturePad" class="border rounded-xl w-full h-40 bg-white cursor-crosshair"></canvas>
+      <div class="flex justify-end mt-2">
+        <button onclick="clearSignature()" class="text-sm text-red-600 hover:underline">Clear Signature</button>
+      </div>
+
+      <button onclick="signIn()" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-indigo-700">
+        Sign In
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div>
+      <h2 class="text-xl font-semibold my-2">Sign-In Records</h2>
+      <table class="w-full border border-gray-300 rounded-xl overflow-hidden text-sm">
+        <thead class="bg-gray-200 text-left">
+          <tr>
+            <th class="p-2">#</th>
+            <th class="p-2">Name</th>
+            <th class="p-2">Hours</th>
+            <th class="p-2">Role</th>
+            <th class="p-2">Time</th>
+            <th class="p-2">Signature</th>
+          </tr>
+        </thead>
+        <tbody id="signInTable" class="bg-white"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let count = 0;
+    let isDrawing = false;
+    let canvas, ctx;
+    let lastX = 0;
+    let lastY = 0;
+
+    window.onload = async () => {
+      canvas = document.getElementById("signaturePad");
+      ctx = canvas.getContext("2d");
+
+      //canvas.addEventListener("mousedown", () => isDrawing = true);
+      //canvas.addEventListener("mouseup", () => { isDrawing = false; ctx.beginPath(); });
+      //canvas.addEventListener("mousemove", draw);
+      //canvas.addEventListener("mouseleave", () => isDrawing = false);
+
+      canvas.addEventListener("mousedown", startDrawing);
+      canvas.addEventListener("mousemove", draw);
+      canvas.addEventListener("mouseup", stopDrawing);
+      canvas.addEventListener("mouseout", stopDrawing);
+
+      canvas.addEventListener("touchstart", startDrawing);
+      canvas.addEventListener("touchmove", draw, { passive: false });
+      canvas.addEventListener("touchend", stopDrawing);
+
+      const res = await fetch("/api/records");
+      const records = await res.json();
+      const table = document.getElementById("signInTable");
+      records.forEach((r, i) => {
+        const row = table.insertRow();
+        row.insertCell(0).innerText = i + 1;
+        row.insertCell(1).innerText = r.name;
+        row.insertCell(2).innerText = r.hours;
+        row.insertCell(3).innerText = r.role;
+        row.insertCell(4).innerText = r.time;
+        const imgCell = row.insertCell(5);
+        if (r.signature) {
+          const img = new Image();
+          img.src = r.signature;
+          img.width = 80;
+          imgCell.appendChild(img);
+        }
+        count++;
+      });
+    };
+
+    //function draw(e) {
+    //  if (!isDrawing) return;
+    //  ctx.lineWidth = 2;
+    //  ctx.lineCap = "round";
+    //  ctx.strokeStyle = "#000";
+    //  const rect = canvas.getBoundingClientRect();
+    //  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    //  ctx.stroke();
+    //  ctx.beginPath();
+    //  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    //}
+
+    function startDrawing(e) {
+      isDrawing = true;
+      lastX = e.pageX - canvas.offsetLeft;
+      lastY = e.pageY - canvas.offsetTop;
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+  
+      var currentX = e.pageX - canvas.offsetLeft;
+      var currentY = e.pageY - canvas.offsetTop;
+  
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(currentX, currentY);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+  
+      lastX = currentX;
+      lastY = currentY;
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    async function signIn() {
+      const name = document.getElementById("studentName").value.trim();
+      const hours = document.getElementById("hours").value.trim();
+      const role = document.getElementById("role").value;
+      const signature = canvas.toDataURL();
+      var blankCanvas = document.createElement('canvas');
+	    
+      if (!name) return alert("Please enter name");
+      if (!hours) return alert("Please enter hours");
+      if (!role) return alert("Please enter role");
+      if (signature == blankCanvas.toDataURL()) return alert ("Please sign");
+
+      const now = new Date().toLocaleString();
+      const res = await fetch("/api/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, hours, role, time: now, signature })
+      });
+
+      if (res.ok) location.reload();
+      else alert("Sign-in failed!");
+    }
+  </script>
+</body>
+</html>
+
