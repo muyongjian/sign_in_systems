@@ -15,11 +15,22 @@
     <!-- Input -->
     <div class="flex flex-col space-y-4">
       <input id="studentName" placeholder="Enter Name" class="p-3 border rounded-xl" />
-      <input type="number" id="hours" placeholder="Enter hours" class="p-3 border rounded-xl" />
-      <select id="role" placeholder="Role" class="p-3 border rounded-xl">
-	<option disabled selected value> -- select Role -- </option>
+      <select type="number" id="hours" placeholder="Enter hours" class="p-3 border rounded-xl">
+	      <option disabled selected value> -- select Hours -- </option>
+        <option value=0.5>30 mins</option>
+        <option value=0.75>45 mins</option>
+        <option value=1.0>60 mins</option>
+      </select>
+      <select id="role" placeholder="Role" value="Student" class="p-3 border rounded-xl">
         <option value="Student">Student</option>
-        <option value="Teacher">Teacher</option>
+      </select>
+      <select id="teacherName" placeholder="Enter teacher name" class="p-3 border rounded-xl">
+	      <option disabled selected value> -- select Teacher -- </option>
+        <option value="Alex">Alex</option>
+        <option value="Aria">Aria</option>
+        <option value="Beini">Beini</option>
+        <option value="Daoyuan">Daoyuan</option>
+        <option value="Kenneth">Kenneth</option>
       </select>
 
       <!-- Signature pad -->
@@ -43,6 +54,7 @@
             <th class="p-2">Name</th>
             <th class="p-2">Hours</th>
             <th class="p-2">Role</th>
+            <th class="p-2">Teacher</th>
             <th class="p-2">Time</th>
             <th class="p-2">Signature</th>
           </tr>
@@ -86,8 +98,9 @@
         row.insertCell(1).innerText = r.name;
         row.insertCell(2).innerText = r.hours;
         row.insertCell(3).innerText = r.role;
-        row.insertCell(4).innerText = r.time;
-        const imgCell = row.insertCell(5);
+        row.insertCell(4).innerText = r.teacher;
+        row.insertCell(5).innerText = r.time;
+        const imgCell = row.insertCell(6);
         if (r.signature) {
           const img = new Image();
           img.src = r.signature;
@@ -146,19 +159,21 @@
       const name = document.getElementById("studentName").value.trim();
       const hours = document.getElementById("hours").value.trim();
       const role = document.getElementById("role").value;
+      const teacher = document.getElementById("teacherName").value;
       const signature = canvas.toDataURL();
       var blankCanvas = document.createElement('canvas');
 	    
       if (!name) return alert("Please enter name");
       if (!hours) return alert("Please enter hours");
       if (!role) return alert("Please enter role");
+      if (!teacher) return alert("Please enter teacher name");
       if (signature == blankCanvas.toDataURL()) return alert ("Please sign");
 
       const now = new Date().toLocaleString();
       const res = await fetch("/api/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, hours, role, time: now, signature })
+        body: JSON.stringify({ name, hours, role, time: now, teacher, signature })
       });
 
       if (res.ok) location.reload();
