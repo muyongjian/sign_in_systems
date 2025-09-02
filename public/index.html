@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Class Sign-In System</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body class="bg-gray-100 p-6">
@@ -14,23 +15,26 @@
 
     <!-- Input -->
     <div class="flex flex-col space-y-4">
-      <input id="studentName" placeholder="Enter Name" class="p-3 border rounded-xl" />
+      <select id="role" placeholder="Role" value="Student" class="p-3 border rounded-xl">
+        <option value="Student">Student</option>
+      </select>
+      <input id="studentName" placeholder="Enter Full Name" class="p-3 border rounded-xl" />
       <select type="number" id="hours" placeholder="Enter hours" class="p-3 border rounded-xl">
 	      <option disabled selected value> -- select Hours -- </option>
         <option value=0.5>30 mins</option>
         <option value=0.75>45 mins</option>
         <option value=1.0>60 mins</option>
       </select>
-      <select id="role" placeholder="Role" value="Student" class="p-3 border rounded-xl">
-        <option value="Student">Student</option>
-      </select>
       <select id="teacherName" placeholder="Enter teacher name" class="p-3 border rounded-xl">
 	      <option disabled selected value> -- select Teacher -- </option>
-        <option value="Alex">Alex</option>
+        <option value="Alexandra">Alexandra</option>
         <option value="Aria">Aria</option>
         <option value="Beini">Beini</option>
+        <option value="Cesar">Cesar</option>
         <option value="Daoyuan">Daoyuan</option>
+        <option value="Erin">Erin</option>
         <option value="Kenneth">Kenneth</option>
+        <option value="Xiaoyue">Xiaoyue</option>
       </select>
 
       <!-- Signature pad -->
@@ -38,6 +42,8 @@
       <div class="flex justify-end mt-2">
         <button onclick="clearSignature()" class="text-sm text-red-600 hover:underline">Clear Signature</button>
       </div>
+
+      <input id="comment" placeholder="Comment (Optional)" value="" class="p-3 border rounded-xl" />
 
       <button onclick="signIn()" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-indigo-700">
         Sign In
@@ -47,6 +53,18 @@
     <!-- Table -->
     <div>
       <h2 class="text-xl font-semibold my-2">Sign-In Records</h2>
+      <button onclick="searchRecords()" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-indigo-700">
+        Search Records
+      </button>
+      <select type="number" id="searchRange" placeholder="Enter Range" class="p-3 border rounded-xl">
+	      <option disabled selected value> -- select Range -- </option>
+        <option value=86400000>1 day</option>
+        <option value=86400000 * 7>1 week</option>
+        <option value=86400000 * 30>1 month</option>
+        <option value=86400000 * 356>1 year</option>
+      </select><br><br>
+      <label for="pwd">Password:</label>
+      <input type="password" id="searchPassword" name="pwd"><br><br>
       <table class="w-full border border-gray-300 rounded-xl overflow-hidden text-sm">
         <thead class="bg-gray-200 text-left">
           <tr>
@@ -56,6 +74,7 @@
             <th class="p-2">Teacher</th>
             <th class="p-2">Time</th>
             <th class="p-2">Signature</th>
+            <th class="p-2">Comment</th>
           </tr>
         </thead>
         <tbody id="signInTable" class="bg-white"></tbody>
@@ -71,6 +90,7 @@
     let lastY = 0;
 
     window.onload = async () => {
+      console.log("Loading");
       canvas = document.getElementById("signaturePad");
       ctx = canvas.getContext("2d");
 
@@ -97,7 +117,7 @@
         row.insertCell(1).innerText = r.hours;
         row.insertCell(2).innerText = r.role;
         row.insertCell(3).innerText = r.teacher;
-        row.insertCell(4).innerText = r.time;
+        row.insertCell(4).innerText = new Date(r.time).toDateString();
         const imgCell = row.insertCell(5);
         if (r.student_signature) {
           const img = new Image();
@@ -105,6 +125,7 @@
           img.width = 80;
           imgCell.appendChild(img);
         }
+        row.insertCell(6).innerText = r.comment;
         count++;
       });
     };
@@ -153,6 +174,53 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
+    async function searchRecords() {
+      const range = parseInt(document.getElementById("searchRange").value);
+      const searchPassword = document.getElementById("searchPassword").value.trim();
+      if (md5(searchPassword).toString() != "ca0a9c68a6490a77528b7c32d626c149") {
+        alert("Invalid password"); 
+        return;
+      }
+      const timeNow = Date.now()
+      const starttime = timeNow - range;
+      console.log(timeNow, range, starttime)
+      if (starttime > timeNow) {
+        alert("Invalid range!");
+        return;
+      }
+      const uri = `/api/search-records?start=${starttime}`
+      const res = await fetch(uri);
+      if (!res.ok) {
+        alert("query failed!");
+        return;
+      }
+      //location.reload();
+      const records = await res.json();
+      const table = document.getElementById("signInTable");
+      var rowCount = table.rows.length;
+      console.log(rowCount);
+
+      for (var x=rowCount; x > 0; x--) {
+        table.deleteRow(0);
+      }
+      records.forEach((r, i) => {
+        const row = table.insertRow();
+        row.insertCell(0).innerText = r.name;
+        row.insertCell(1).innerText = r.hours;
+        row.insertCell(2).innerText = r.role;
+        row.insertCell(3).innerText = r.teacher;
+        row.insertCell(4).innerText = new Date(r.time).toDateString();
+        const imgCell = row.insertCell(5);
+        if (r.student_signature) {
+          const img = new Image();
+          img.src = r.student_signature;
+          img.width = 80;
+          imgCell.appendChild(img);
+        }
+        row.insertCell(6).innerText = r.comment;
+      });
+    }
+
     async function signIn() {
       const name = document.getElementById("studentName").value.trim();
       const hours = document.getElementById("hours").value.trim();
@@ -160,6 +228,7 @@
       const teacher = document.getElementById("teacherName").value;
       const signature = canvas.toDataURL();
       var blankCanvas = document.createElement('canvas');
+      const comment = document.getElementById("comment").value.trim();
 	    
       if (!name) return alert("Please enter name");
       if (!hours) return alert("Please enter hours");
@@ -167,11 +236,11 @@
       if (!teacher) return alert("Please enter teacher name");
       if (signature == blankCanvas.toDataURL()) return alert ("Please sign");
 
-      const now = new Date().toLocaleString();
+      const now = Date.now();
       const res = await fetch("/api/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, hours, role, time: now, teacher, signature })
+        body: JSON.stringify({ name, hours, role, time: now, teacher, signature, comment })
       });
 
       if (res.ok) location.reload();
