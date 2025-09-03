@@ -141,19 +141,54 @@
     //  ctx.beginPath();
     //  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
     //}
+    function getCanvasCoordinates(event) {
+      
+
+      // if (event.offsetX) {
+      //     clientX = event.offsetX;
+      //     clientY = event.offsetY;
+      // }
+      // else if (e.layerX) {
+      //     clientX = event.layerX;
+      //     clientY = event.layerY;
+      // }
+
+      // return {
+      //     x: clientX/2,
+      //     y: clientY
+      // };
+
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+
+      if (event.type.startsWith('touch')) {
+          clientX = event.touches[0].clientX;
+          clientY = event.touches[0].clientY;
+      } else { // Mouse events
+          clientX = event.clientX;
+          clientY = event.clientY;
+      }
+
+      return {
+          x: (clientX - rect.left)/2,
+          y: clientY - rect.top
+      };
+  }
 
     function startDrawing(e) {
       isDrawing = true;
-      lastX = e.pageX - canvas.offsetLeft;
-      lastY = e.pageY - canvas.offsetTop;
+      const coords = getCanvasCoordinates(e);
+      lastX = coords.x;
+      lastY = coords.y;
     }
 
     function draw(e) {
       if (!isDrawing) return;
       e.preventDefault();
   
-      var currentX = e.pageX - canvas.offsetLeft;
-      var currentY = e.pageY - canvas.offsetTop;
+      const coords = getCanvasCoordinates(e);
+      var currentX = coords.x;
+      var currentY = coords.y;
   
       ctx.beginPath();
       ctx.moveTo(lastX, lastY);
