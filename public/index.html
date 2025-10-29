@@ -24,6 +24,7 @@
         <option value=0.5>30 mins</option>
         <option value=0.75>45 mins</option>
         <option value=1.0>60 mins</option>
+        <option value=2.25>135 mins</option>
       </select>
       <select id="teacherName" placeholder="Enter teacher name" class="p-3 border rounded-xl">
 	      <option disabled selected value> -- select Teacher -- </option>
@@ -59,12 +60,24 @@
       <select type="number" id="searchRange" placeholder="Enter Range" class="p-3 border rounded-xl">
 	      <option disabled selected value> -- select Range -- </option>
         <option value=86400000>1 day</option>
-        <option value=86400000 * 7>1 week</option>
-        <option value=86400000 * 30>1 month</option>
-        <option value=86400000 * 356>1 year</option>
+        <option value=604800000>1 week</option>
+        <option value=2592000000>1 month</option>
+        <option value=31536000000>1 year</option>
       </select><br><br>
       <label for="pwd">Password:</label>
       <input type="password" id="searchPassword" name="pwd"><br><br>
+      <select id="searchTeacher" placeholder="Enter teacher name" class="p-3 border rounded-xl">
+	      <option disabled selected value> -- select Teacher -- </option>
+        <option value="Alexandra">Alexandra</option>
+        <option value="Aria">Aria</option>
+        <option value="Beini">Beini</option>
+        <option value="Cesar">Cesar</option>
+        <option value="Daoyuan">Daoyuan</option>
+        <option value="Erin">Erin</option>
+        <option value="Kenneth">Kenneth</option>
+        <option value="Xiaoyue">Xiaoyue</option>
+        <option value="Admin">Admin</option>
+      </select>
       <table class="w-full border border-gray-300 rounded-xl overflow-hidden text-sm">
         <thead class="bg-gray-200 text-left">
           <tr>
@@ -212,9 +225,18 @@
     async function searchRecords() {
       const range = parseInt(document.getElementById("searchRange").value);
       const searchPassword = document.getElementById("searchPassword").value.trim();
-      if (md5(searchPassword).toString() != "ca0a9c68a6490a77528b7c32d626c149") {
-        alert("Invalid password"); 
-        return;
+      const searchTeacherName = document.getElementById("searchTeacher").value.trim();
+      console.log(searchTeacherName)
+      if (searchTeacherName == "Admin") {
+        if (md5(searchPassword).toString() != "ca0a9c68a6490a77528b7c32d626c149") {
+          alert("Invalid admin password"); 
+          return;
+          }
+      } else {
+        if (md5(searchPassword).toString() != "e10adc3949ba59abbe56e057f20f883e") {
+          alert("Invalid teacher password"); 
+          return;
+        }
       }
       const timeNow = Date.now()
       const starttime = timeNow - range;
@@ -223,7 +245,7 @@
         alert("Invalid range!");
         return;
       }
-      const uri = `/api/search-records?start=${starttime}`
+      const uri = `/api/search-records?start=${starttime}&teacher=${searchTeacherName}`
       const res = await fetch(uri);
       if (!res.ok) {
         alert("query failed!");

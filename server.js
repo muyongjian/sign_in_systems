@@ -30,7 +30,9 @@ app.get("/api/search-records", (req, res) => {
   //   res.json(rows);
   // });
   const starttime = req.query.start;
-  const queryfmt = `SELECT * FROM signins WHERE time > ${starttime}`;
+  const teacherName = req.query.teacher;
+  const queryfmt = teacherName == "Admin" ? `SELECT * FROM signins WHERE time > ${starttime}` : `SELECT * FROM signins WHERE time > ${starttime} and teacher="${teacherName}"`;
+  console.log(queryfmt)
   db.all(queryfmt, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
